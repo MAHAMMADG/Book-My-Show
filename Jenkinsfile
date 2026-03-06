@@ -30,7 +30,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('bookmyshow-app') {
-                    withSonarQubeEnv('sonarqube') {
+                    withSonarQubeEnv('sonar-serevr') {
                         sh '''
                         ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
                         -Dsonar.projectKey=bookmyshow \
