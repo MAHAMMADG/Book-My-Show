@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        DOCKER_IMAGE = "mahammad7/bookmyshow"
     }
 
     stages {
@@ -13,7 +14,7 @@ pipeline {
             }
         }
 
-        stage('Checkout Code') {
+        stage('Checkout Code from GitHub') {
             steps {
                 git branch: 'mahi-branch', url: 'https://github.com/MAHAMMADG/Book-My-Show.git'
             }
@@ -21,73 +22,57 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('bookmyshow-app') {
-                    withSonarQubeEnv('sonar-server') {
-                        sh """
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectKey=first-project \
-                        -Dsonar.sources=.
-                        """
-                    }
+                withSonarQubeEnv('sonar-server') {
+                    sh """
+                    ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=first-project \
+                    -Dsonar.projectName=first-project
+                    """
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build') {
             steps {
-                dir('bookmyshow-app') {
-                    sh 'docker build -t bookmyshow-app .'
+                sh 'docker build -t $DOCKER_IMAGE:latest ./bookmyshow-app'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker-cred', url: '') {
+                    sh 'docker push $DOCKER_IMAGE:latest'
                 }
             }
         }
 
-        stage('Deploy Docker Container') {
+        stage('Deploy to Docker Container') {
             steps {
                 sh '''
-                docker stop bookmyshow || true
-                docker rm bookmyshow || true
-                docker run -d -p 3000:3000 --name bookmyshow bookmyshow-app
+                docker stop bms-container || true
+                docker rm bms-container || true
+                docker run -d -p 3000:3000 --name bms-container $DOCKER_IMAGE:latest
                 '''
             }
         }
+
     }
 
     post {
-
         success {
             emailext(
-                subject: "Jenkins Build SUCCESS",
-                body: """
-Pipeline executed successfully.
-
-Project: BookMyShow
-Build Number: ${env.BUILD_NUMBER}
-Job Name: ${env.JOB_NAME}
-
-Application deployed successfully.
-""",
+                subject: "SUCCESS: Build and Deployment Completed",
+                body: "The CI/CD pipeline completed successfully.",
                 to: "mahammadghouseb@gmail.com"
             )
         }
 
         failure {
             emailext(
-                subject: "Jenkins Build FAILED",
-                body: """
-Pipeline execution FAILED.
-
-Project: BookMyShow
-Build Number: ${env.BUILD_NUMBER}
-Job Name: ${env.JOB_NAME}
-
-Check Jenkins console logs.
-""",
+                subject: "FAILED: CI/CD Pipeline",
+                body: "The CI/CD pipeline failed. Check Jenkins for details.",
                 to: "mahammadghouseb@gmail.com"
             )
-        }
-
-        always {
-            echo "Pipeline finished."
         }
     }
 }
