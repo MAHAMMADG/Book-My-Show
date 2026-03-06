@@ -5,6 +5,10 @@ pipeline {
         nodejs 'node23'
     }
 
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
     stages {
 
         stage('Clean Workspace') {
@@ -30,12 +34,12 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('bookmyshow-app') {
-                    withSonarQubeEnv('sonar-serevr') {
-                        sh '''
-                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                    withSonarQubeEnv('sonar-server') {
+                        sh """
+                        $SCANNER_HOME/bin/sonar-scanner \
                         -Dsonar.projectKey=bookmyshow \
                         -Dsonar.sources=.
-                        '''
+                        """
                     }
                 }
             }
