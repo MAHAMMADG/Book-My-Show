@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'node23'
-    }
-
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -23,21 +19,13 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                dir('bookmyshow-app') {
-                    sh 'npm install'
-                }
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 dir('bookmyshow-app') {
                     withSonarQubeEnv('sonar-server') {
                         sh """
                         $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectKey=bookmyshow \
+                        -Dsonar.projectKey=first-project \
                         -Dsonar.sources=.
                         """
                     }
@@ -62,7 +50,6 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
